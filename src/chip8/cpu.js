@@ -35,36 +35,49 @@ export default class CPU {
 
         this.gfx = Array(SCREEN_WIDTH * SCREEN_HEIGHT).fill(0);
 
-        this.stack = Array(STACK_SIZE).fill(0);
-        // stack pointer
-        this.sp = 0;
+        this.stack = [];
 
         this.key = Array(NB_KEYS).fill(0);
 
         this.delay_timer = 0;
         this.sound_timer = 0;
-
-        this.skip_instr = false;
     }
 
     initialize() {
         this.opcode = 0;
-        this.pc = 0;
+        this.pc = 0x200;
         this.sp = 0;
         this.delay_timer = 0;
         this.sound_timer = 0;
 
-        memory.fill(0);
         V.fill(0);
         gfx.fill(0);
         stack.fill(0);
         key.fill(0);
+        memory.fill(0);
+        for (let i = 0; i < fontset.length; i++)
+            this.memory[i] = fontset[i];
+    }
+
+    loadGame(game) {
+        for (let i = 0; i < game.length; i++) {
+            this.memory[i + 0x200] = game[i];
+        }
     }
 
     emulateCycle() {
-       let code = this.fetchOpcode();
+        let code = this.fetchOpcode();
 
-       this.decodeAndExecuteOpcode(code);
+        this.decodeAndExecuteOpcode(code);
+
+        if (this.delay_timer > 0) {
+           this.delay_timer -= 1;
+        }
+
+        if (this.sound_timer > 0) {
+            this.sound_timer -= 1;
+            console.log('bip');
+        }
     }
 
     fetchOpcode() {
@@ -75,141 +88,172 @@ export default class CPU {
         switch (true) {
             case (code === 0x0e0):
                 disp_clear();
+                this.pc += 2;
                 break;
-            case (code == 0x0ee):
-                //return subroutine
+            case (code === 0x0ee):
+                if (this.stack.length === 0) {
+                    console.error('STACK EMPTY');
+                }
+                this.pc = this.stack.pop();
                 break;
             case (code < 0x1000):
-                let addr = NNN_MASK & code;
-                // call (addr)
+                this.pc += 2;
                 break;
             case (code < 0x2000):
                 let addr = NNN_MASK & code;
-                // jump (addr)
+                this.pc = addr;
                 break;
             case (code < 0x3000):
                 let addr = NNN_MASK & code;
-                // call subroutine (addr)
+                if (this.stack.length > STACK_SIZE) {
+                    console.error('STACK OVERFLOW');
+                    this.pc += 2;
+                    break;
+                }
+                this.stack.push(pc);
+                this.pc = addr;
                 break;
             case (code < 0x4000):
                 let x = (XNN_MASK & code) >> 8;
                 let nn = NN_MASK & code;
                 if (x === nn) {
-                    this.skip_instr = true;
+                    thiS.pc += 2;
                 }
+                this.pc += 2;
                 break;
             case (code < 0x5000):
-                if (N_MASK & code !== 0)
+                if (N_MASK & code !== 0) {
+                    this.pc += 2;
                     break;
+                }
                 let x = (XNN_MASK & code) >> 8;
                 let nn = NN_MASK & code;
                 if (x !== nn) {
-                    this.skip_instr = true;
+                    thiS.pc += 2;
                 }
+                this.pc += 2;
                 break;
             case (code < 0x6000):
                 let x = (XNN_MASK & code) >> 8;
                 let y = (XN_MASK & code) >> 4;
                 if (x === y) {
-                    this.skip_instr = true;
+                    thiS.pc += 2;
                 }
+                this.pc += 2;
                 break;
             case (code < 0x7000):
                 let x = (XNN_MASK & code) >> 8;
                 let val = NN_MASK & code;
                 this.V[x] = val;
+                this.pc += 2;
                 break;
             case (code < 0x8000):
                 let x = (XNN_MASK & code) >> 8;
                 let val = NN_MASK & code;
                 this.V[x] = NN_MASK & (this.V[x] + val);
+                this.pc += 2;
                 break;
             case (code < 0x9000 && (N_MASK & code) === 0):
                 let x = (XNN_MASK & code) >> 8;
                 let y = XN_MASK & code;
                 this.V[x] = this.V[y];
+                this.pc += 2;
                 break;
             case (code < 0x9000 && (N_MASK & code) === 1):
                 let x = (XNN_MASK & code) >> 8;
                 let y = (XN_MASK & code) >> 4;
                 this.V[x] = this.V[x] | this.V[y];
+                this.pc += 2;
                 break;
             case (code < 0x9000 && (N_MASK & code) === 2):
                 let x = (XNN_MASK & code) >> 8;
                 let y = (XN_MASK & code) >> 4;
                 this.V[x] = this.V[x] & this.V[y];
+                this.pc += 2;
                 break;
             case (code < 0x9000 && (N_MASK & code) === 3):
                 let x = (XNN_MASK & code) >> 8;
                 let y = (XN_MASK & code) >> 4;
                 this.V[x] = this.V[x] ^ this.V[y];
+                this.pc += 2;
                 break;
             case (code < 0x9000 && (N_MASK & code) === 4):
                 let x = (XNN_MASK & code) >> 8;
                 let y = (XN_MASK & code) >> 4;
                 this.V[x] = NN_MASK & (this.V[x] + this.V[y]);
                 this.V[CARRY_REGISTER] = (XNN_MASK & (this.V[x] + this.V[y])) >> 8;
+                this.pc += 2;
                 break;
             case (code < 0x9000 && (N_MASK & code) === 5):
                 let x = (XNN_MASK & code) >> 8;
                 let y = (XN_MASK & code) >> 4;
                 this.V[x] > this.V[y] ? this.V[CARRY_REGISTER] = 1 : this.V[CARRY_REGISTER] = 0; 
                 this.V[x] = NN_MASK & (Math.abs(this.V[x] - this.V[y]));
+                this.pc += 2;
                 break;
             case (code < 0x9000 && (N_MASK & code) === 6):
                 let x = (XNN_MASK & code) >> 8;
                 this.V[CARRY_REGISTER] = 0b00000001 & this.V[x];
                 this.V[x] = this.V[x] >> 1;
+                this.pc += 2;
                 break;
             case (code < 0x9000 && (N_MASK & code) === 7):
                 let x = (XNN_MASK & code) >> 8;
                 let y = (XN_MASK & code) >> 4;
                 this.V[x] > this.V[y] ? this.V[CARRY_REGISTER] = 0 : this.V[CARRY_REGISTER] = 1; 
                 this.V[x] = NN_MASK & (Math.abs(this.V[y] - this.V[x]));
+                this.pc += 2;
                 break;
             case (code < 0x9000 && (N_MASK & code) === 14):
                 let x = (XNN_MASK & code) >> 8;
                 this.V[CARRY_REGISTER] = 0b10000000 & this.V[x];
                 this.V[x] = NN_MASK & (this.V[x] << 1);
+                this.pc += 2;
                 break;
             case (code < 0x9000):
+                this.pc += 2;
                 break;
             case (code < 0xa000):
                 if (N_MASK & code !== 0)
+                    this.pc += 2;
                     break;
                 let x = (XNN_MASK & code) >> 8;
                 let y = (XN_MASK & code) >> 4;
                 if (this.V[x] != this.V[y]) {
-                    this.skip_instr = true;
+                    thiS.pc += 2;
                 }
+                this.pc += 2;
                 break;
             case (code < 0xb000):
                 let addr = NNN_MASK & code;
                 this.I = addr;
+                this.pc += 2;
                 break;
             case (code < 0xc000):
                 let addr = NNN_MASK & code;
                 this.pc = this.V[0] + addr;
-                // ????????????????????????????
                 break;
             case (code < 0xd000):
                 let x = (XNN_MASK & code) >> 8;
                 this.V[x] = Math.floor(Math.random() * Math.floor(256)) & (NN_MASK & code);
+                this.pc += 2;
                 break;
             case (code < 0xe000):
                 let x = (XNN_MASK & code) >> 8;
                 let y = (XN_MASK & code) >> 4;
                 let n = N_MASK & code;
                 drawSprite(this.V[x], this.V[y], n);
+                this.pc += 2;
                 break;
             case (code < 0xf000):
                 let x = (XNN_MASK & code) >> 8;
                 let nn = NN_MASK & code;
                 if (nn === 0x9e && getKey() === this.V[x]) {
-                    this.skip_instr = true;
+                    thiS.pc += 2;
                 } else if (nn === 0xa1 && getKey() !== this.V[x]) {
-                    this.skip_instr = true;
+                    thiS.pc += 2;
                 }
+                this.pc += 2;
                 break;
             case (code < 0x10000):
                 let x = (XNN_MASK & code) >> 8;
@@ -218,7 +262,7 @@ export default class CPU {
                     this.V[x] = NN_MASK & this.delay_timer;
                 } else if (nn === 0x0a) {
                     this.V[x] = getKey();
-                    // blocking operation
+                    // wait for input
                 } else if (nn === 0x15) {
                     this.delay_timer = this.V[x];
                 } else if (nn === 0x18) {
@@ -231,7 +275,7 @@ export default class CPU {
                 } else if (nn === 0x33) {
                     this.memory[this.I] = Math.round(this.V[x] / 100);
                     this.memory[this.I] = Math.round(this.V[x] / 10) % 10;
-                    this.memory[this.I] = this.V[x] % 10;
+                    this.memory[this.I] = (this.V[x] % 100) % 10;
                 } else if (nn === 0x55) {
                     for (let i = 0; i <= x; i++) {
                         this.memory[this.I + i] = this.V[i];
@@ -241,6 +285,7 @@ export default class CPU {
                         this.V[i] = thiS.memory[this.I + i];
                     }
                 }
+                this.pc += 2;
                 break;
             default:
                 console.error('OPCODE value incorrect :' + code);
