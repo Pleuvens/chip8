@@ -1,14 +1,10 @@
-import { Component } from "react";
+import React, { Component } from "react";
 
 import CPU from './cpu';
 
-const MAZE = [
-    0xa2, 0x1e, 0xc2, 0x01, 0x32, 0x01, 0xa2, 0x1a,
-    0xd0, 0x14, 0x70, 0x04, 0x30, 0x40, 0x12, 0x00,
-    0x60, 0x00, 0x71, 0x04, 0x31, 0x20, 0x12, 0x00,
-    0x12, 0x18, 0x80, 0x40, 0x20, 0x10, 0x20, 0x40,
-    0x80, 0x10
-];
+import './chip8.css';
+
+import roms from './roms';
 
 export default class Chip8 extends Component {
 
@@ -22,7 +18,8 @@ export default class Chip8 extends Component {
         this.setupGraphics();
 
         this.cpu.initialize();
-        this.cpu.loadGame();
+        this.cpu.loadGame(roms.IBM);
+        setInterval(this.emulationLoop, 16);
     }
 
     setupGraphics() {
@@ -42,8 +39,8 @@ export default class Chip8 extends Component {
         }
     }
 
-    loadGame = () => {
-        this.cpu.loadGame(MAZE);
+    loadGame = (game) => {
+        this.cpu.loadGame(game);
     }
 
     emulationLoop = () => {
