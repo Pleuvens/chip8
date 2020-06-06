@@ -131,10 +131,13 @@ export default class CPU {
         return this.memory[this.pc] << 8 | this.memory[pc + 1];
     }
 
+    disp_clear() {
+        this.gfx.fill(0);
+    }
     decodeAndExecuteOpcode(code) {
         switch (true) {
             case (code === 0x0e0):
-                disp_clear();
+                this.disp_clear();
                 this.pc += 2;
                 break;
             case (code === 0x0ee):
