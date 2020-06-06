@@ -13,6 +13,32 @@ const XN_MASK  = 0b0000000011110000;
 
 const CARRY_REGISTER = 15;
 
+const fontset = [
+    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+    0x20, 0x60, 0x20, 0x20, 0x70, // 1
+    0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+    0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+    0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+    0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+    0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+    0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+    0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+    0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+    0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+    0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+    0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+    0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+];
+
+const keyboard = [
+    49, 50, 51, 52,
+    65, 90, 69, 82,
+    81, 83, 68, 70,
+    87, 88, 67, 86
+]
+
 export default class CPU {
     constructor() {
         this.opcode = 0;
@@ -37,18 +63,39 @@ export default class CPU {
 
         this.stack = [];
 
-        this.key = Array(NB_KEYS).fill(0);
+        this.key = Array(NB_KEYS).fill(false);
 
         this.delay_timer = 0;
         this.sound_timer = 0;
+
+        this.drawFlag = false;
+
+        this.addEventListener('onkeydown', this.keyPressed);
+        this.addEventListener('onkeyup', this.keyReleased);
     }
 
+    keyPressed(event) {
+        for (let i = 0; i < NB_KEYS; i++) {
+            if (keyboard[i] === event.keyCode) {
+                this.key[i] = true;
+            }
+        }
+    }
+
+    keyReleased(event) {
+        for (let i = 0; i < NB_KEYS; i++) {
+            if (keyboard[i] === event.keyCode) {
+                this.key[i] = false;
+            }
+        }
+    }
     initialize() {
         this.opcode = 0;
         this.pc = 0x200;
         this.sp = 0;
         this.delay_timer = 0;
         this.sound_timer = 0;
+        this.drawFlag = false;
 
         V.fill(0);
         gfx.fill(0);
@@ -241,16 +288,30 @@ export default class CPU {
             case (code < 0xe000):
                 let x = (XNN_MASK & code) >> 8;
                 let y = (XN_MASK & code) >> 4;
-                let n = N_MASK & code;
-                drawSprite(this.V[x], this.V[y], n);
+                let height = N_MASK & code;
+
+                let pixel = 0;
+                this.V[CARRY_REGISTER] = 0;
+                for (let j = 0; j < height; j++) {
+                    pixel = this.memory[this.I + j];
+                    for (let i = 0; i < 8; i++) {
+                        if ((pixel & (0x80 >> i)) !== 0) {
+                            if (this.gfx[(x + i + ((y + j) * SCREEN_WIDTH))] === 1)
+                                this.V[CARRY_REGISTER] = 1;
+                            this.gfx[x + i + ((y + j) * SCREEN_WIDTH)] ^= 1;
+                        }
+                    }
+                }
+
+                this.drawFlag = true;
                 this.pc += 2;
                 break;
             case (code < 0xf000):
                 let x = (XNN_MASK & code) >> 8;
                 let nn = NN_MASK & code;
-                if (nn === 0x9e && getKey() === this.V[x]) {
+                if (nn === 0x9e && this.key[this.V[x]]) {
                     thiS.pc += 2;
-                } else if (nn === 0xa1 && getKey() !== this.V[x]) {
+                } else if (nn === 0xa1 && !this.key[this.V[x]]) {
                     thiS.pc += 2;
                 }
                 this.pc += 2;
@@ -261,8 +322,12 @@ export default class CPU {
                 if (nn === 0x07) {
                     this.V[x] = NN_MASK & this.delay_timer;
                 } else if (nn === 0x0a) {
-                    this.V[x] = getKey();
-                    // wait for input
+                    for (let i = 0; i < NB_KEYS; i++) {
+                        if (this.key[i]) {
+                            this.V[x] = i;
+                            break;
+                        }
+                    }
                 } else if (nn === 0x15) {
                     this.delay_timer = this.V[x];
                 } else if (nn === 0x18) {
@@ -275,7 +340,7 @@ export default class CPU {
                 } else if (nn === 0x33) {
                     this.memory[this.I] = Math.round(this.V[x] / 100);
                     this.memory[this.I] = Math.round(this.V[x] / 10) % 10;
-                    this.memory[this.I] = (this.V[x] % 100) % 10;
+                    this.memory[this.I] = this.V[x] % 10;
                 } else if (nn === 0x55) {
                     for (let i = 0; i <= x; i++) {
                         this.memory[this.I + i] = this.V[i];
