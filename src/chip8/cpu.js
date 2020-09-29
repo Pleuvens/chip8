@@ -134,6 +134,7 @@ export default class CPU {
     disp_clear() {
         this.gfx.fill(0);
     }
+
     decodeAndExecuteOpcode = (code) => {
         switch (true) {
             case (code === 0x0e0): {
@@ -143,13 +144,14 @@ export default class CPU {
             }
             case (code === 0x0ee): {
                 if (this.stack.length === 0) {
-                    console.error('STACK EMPTY');
+                    throw 'STACK EMPTY';
                 }
                 this.pc = this.stack.pop();
                 break;
             }
             case (code < 0x1000): {
                 this.pc += 2;
+                // TODO : 0NNN
                 break;
             }
             case (code < 0x2000): {
@@ -387,5 +389,42 @@ export default class CPU {
                 console.error('OPCODE value incorrect :' + code);
                 break;
         }
+    }
+
+    /* TEST CODE */
+
+    arrayEquals = (a, b) => {
+        return Array.isArray(a) &&
+                Array.isArray(b) &&
+                a.length === b.length &&
+                a.every((val, index) => val === b[index]);
+    }
+
+    test0x0e0 = () => {
+        this.decodeAndExecuteOpcode(0x0e0);
+        return this.pc === (0x200 + 2) &&
+            this.arrayEquals(this.gfx, Array(SCREEN_WIDTH * SCREEN_HEIGHT).fill(0));
+    }
+
+    test0x0ee = () => {
+        let err = false;
+        try {
+            this.decodeAndExecuteOpcode(0x0ee);
+        } catch (e) {
+            err = this.pc === (0x200);
+        }
+        // TODO: Initialize and check pc value
+        return err;
+    }
+
+    test0x1nnn = () => {
+        this.decodeAndExecuteOpcode(0x1000);
+        let addr1 = this.pc;
+        this.decodeAndExecuteOpcode(0x1fff);
+        let addr2 = this.pc;
+        this.decodeAndExecuteOpcode(0x12a8);
+        let addr3 = this.pc;
+        return addr1 === 0x000 && addr2 === 0x1fff
+            && addr3 === 0x12a8;
     }
 }
