@@ -5,11 +5,11 @@ const SCREEN_HEIGHT = 32;
 const STACK_SIZE = 16;
 const NB_KEYS = 16;
 
-const NNN_MASK = 0b0000111111111111;
-const NN_MASK  = 0b0000000011111111;
-const N_MASK   = 0b0000000000001111;
-const XNN_MASK = 0b0000111100000000;
-const XN_MASK  = 0b0000000011110000;
+const NNN_MASK   = 0b0000111111111111;
+const NN_MASK    = 0b0000000011111111;
+const N_MASK     = 0b0000000000001111;
+const XNN_MASK   = 0b0000111100000000;
+const XN_MASK    = 0b0000000011110000;
 
 const CARRY_REGISTER = 15;
 
@@ -99,7 +99,7 @@ export default class CPU {
 
         this.V.fill(0);
         this.gfx.fill(0);
-        this.stack.fill(0);
+        this.stack = [];
         this.key.fill(0);
         this.memory.fill(0);
         for (let i = 0; i < fontset.length; i++)
@@ -162,9 +162,7 @@ export default class CPU {
             case (code < 0x3000): {
                 let addr = NNN_MASK & code;
                 if (this.stack.length > STACK_SIZE) {
-                    console.error('STACK OVERFLOW');
-                    this.pc += 2;
-                    break;
+                    throw 'STACK OVERFLOW';
                 }
                 this.stack.push(this.pc);
                 this.pc = addr;
@@ -173,29 +171,29 @@ export default class CPU {
             case (code < 0x4000): {
                 let x = (XNN_MASK & code) >> 8;
                 let nn = NN_MASK & code;
-                if (x === nn) {
+                if (this.V[x] === nn) {
                     this.pc += 2;
                 }
                 this.pc += 2;
                 break;
             }
             case (code < 0x5000): {
-                if (N_MASK & code !== 0) {
-                    this.pc += 2;
-                    break;
-                }
                 let x = (XNN_MASK & code) >> 8;
                 let nn = NN_MASK & code;
-                if (x !== nn) {
+                if (this.V[x] !== nn) {
                     this.pc += 2;
                 }
                 this.pc += 2;
                 break;
             }
             case (code < 0x6000): {
+                if (N_MASK & code !== 0) {
+                    this.pc += 2;
+                    break;
+                }
                 let x = (XNN_MASK & code) >> 8;
                 let y = (XN_MASK & code) >> 4;
-                if (x === y) {
+                if (this.V[x] === this.V[y]) {
                     this.pc += 2;
                 }
                 this.pc += 2;
@@ -262,7 +260,7 @@ export default class CPU {
             case (code < 0x9000 && (N_MASK & code) === 6): {
                 let x = (XNN_MASK & code) >> 8;
                 this.V[CARRY_REGISTER] = 0b00000001 & this.V[x];
-                this.V[x] = this.V[x] >> 1;
+                this.V[x] = NN_MASK & this.V[x] >> 1;
                 this.pc += 2;
                 break;
             }
@@ -386,7 +384,7 @@ export default class CPU {
                 break;
             }
             default:
-                console.error('OPCODE value incorrect :' + code);
+                throw `OPCODE value incorrect : ${code}`;
                 break;
         }
     }
@@ -400,13 +398,13 @@ export default class CPU {
                 a.every((val, index) => val === b[index]);
     }
 
-    test0x0e0 = () => {
+    test0x0E0 = () => {
         this.decodeAndExecuteOpcode(0x0e0);
         return this.pc === (0x200 + 2) &&
             this.arrayEquals(this.gfx, Array(SCREEN_WIDTH * SCREEN_HEIGHT).fill(0));
     }
 
-    test0x0ee = () => {
+    test0x0EE = () => {
         let err = false;
         try {
             this.decodeAndExecuteOpcode(0x0ee);
@@ -417,7 +415,7 @@ export default class CPU {
         return err;
     }
 
-    test0x1nnn = () => {
+    test0x1NNN = () => {
         this.decodeAndExecuteOpcode(0x1000);
         let addr1 = this.pc;
         this.decodeAndExecuteOpcode(0x1fff);
@@ -426,5 +424,253 @@ export default class CPU {
         let addr3 = this.pc;
         return addr1 === 0x000 && addr2 === 0x1fff
             && addr3 === 0x12a8;
+    }
+
+    test0x2NNN = () => {
+        this.decodeAndExecuteOpcode(0x2000);
+        let addr1 = this.pc;
+        this.decodeAndExecuteOpcode(0x2fff);
+        let addr2 = this.pc;
+        this.decodeAndExecuteOpcode(0x22a8);
+        let addr3 = this.pc;
+        return addr1 === 0x000 && addr2 === 0x1fff
+            && addr3 === 0x12a8 && this.stack[0] === addr1
+            && this.stack[1] === addr2 && this.stack[2] === addr3;
+    }
+
+    test0x3XNN = () => {
+        this.decodeAndExecuteOpcode(0x3000);
+        let test1 = this.pc === (0x200 + 4);
+        this.initialize();
+        this.decodeAndExecuteOpcode(0x3001);
+        return test1 && this.pc === (0x200 + 2);
+    }
+
+    test0x4XNN = () => {
+        this.decodeAndExecuteOpcode(0x4000);
+        let test1 = this.pc === (0x200 + 2);
+        this.initialize();
+        this.decodeAndExecuteOpcode(0x4001);
+        return test1 && this.pc === (0x200 + 4);
+    }
+
+    test0x5XY0 = () => {
+        this.decodeAndExecuteOpcode(0x5001);
+        let test1 = this.pc === (0x200 + 2);
+        this.initialize();
+        this.decodeAndExecuteOpcode(0x5010);
+        let test2 = this.pc === (0x200 + 2);
+        this.initialize();
+        this.decodeAndExecuteOpcode(0x5000);
+        return test1 && test2 && this.pc === (0x200 + 4);
+    }
+
+    test0x6XNN = () => {
+        this.decodeAndExecuteOpcode(0x6050);
+        return this.pc === (0x200 + 2)
+            && this.V[0] === 0x50;
+    }
+
+    test0x7XNN = () => {
+        this.decodeAndExecuteOpcode(0x7080);
+        let test1 = this.pc === (0x200 + 2)
+            && this.V[0] === 0x80;
+        this.decodeAndExecuteOpcode(0x7080);
+        return test1 && this.pc === (0x200 + 4)
+            && this.V[0] === 0;
+    }
+
+    test0x8XY0 = () => {
+        this.V[1] = 0x50;
+        this.decodeAndExecuteOpcode(0x8010);
+        return this.pc === (0x200 + 2)
+            && this.V[0] === this.V[1];
+    }
+
+    test0x8XY1 = () => {
+        this.V[1] = 0x50;
+        this.decodeAndExecuteOpcode(0x8011);
+        return this.pc === (0x200 + 2)
+            && this.V[0] === (0 | this.V[1]);
+    }
+
+    test0x8XY2 = () => {
+        this.V[1] = 0x50;
+        this.decodeAndExecuteOpcode(0x8012);
+        return this.pc === (0x200 + 2)
+            && this.V[0] === (0 & this.V[1]);
+    }
+
+    test0x8XY3 = () => {
+        this.V[1] = 0x50;
+        this.decodeAndExecuteOpcode(0x8013);
+        return this.pc === (0x200 + 2)
+            && this.V[0] === (0 ^ this.V[1]);
+    }
+
+    test0x8XY4 = () => {
+        this.V[1] = 0x50;
+        this.decodeAndExecuteOpcode(0x8014);
+        let test1 = this.pc === (0x200 + 2)
+            && this.V[0] === this.V[1]
+            && this.V[CARRY_REGISTER] === 0;
+        this.decodeAndExecuteOpcode(0x8014);
+        let test2 = this.pc === (0x200 + 4)
+            && this.V[0] === (2 * this.V[1])
+            && this.V[CARRY_REGISTER] === 1;
+        this.decodeAndExecuteOpcode(0x8014);
+        return test1 && test2 && this.pc === (0x200 + 6)
+            && this.V[0] === (3 * this.V[1])
+            && this.V[CARRY_REGISTER] === 0;
+    }
+
+    test0x8XY5 = () => {
+        this.V[0] = 0x70;
+        this.V[1] = 0x50;
+        this.decodeAndExecuteOpcode(0x8015);
+        let test1 = this.pc === (0x200 + 2)
+            && this.V[0] === 0x20
+            && this.V[CARRY_REGISTER] === 1;
+        this.decodeAndExecuteOpcode(0x8015);
+        let test2 = this.pc === (0x200 + 4)
+            && this.V[0] === 0x30
+            && this.V[CARRY_REGISTER] === 0;
+        return test1 && test2;
+    }
+
+    test0x8XY6 = () => {
+        this.V[0] = 2;
+        this.decodeAndExecuteOpcode(0x8006);
+        let test1 = this.pc === (0x200 + 2)
+            && this.V[0] === 1
+            && this.V[CARRY_REGISTER] === 0;
+        this.decodeAndExecuteOpcode(0x8006);
+        return test1 && this.pc === (0x200 + 4)
+            && this.V[0] === 0
+            && this.V[CARRY_REGISTER] === 1;        
+    }
+
+    test0x8XY7 = () => {
+        this.V[0] = 0x70;
+        this.V[1] = 0x50;
+        this.decodeAndExecuteOpcode(0x8017);
+        let test1 = this.pc === (0x200 + 2)
+            && this.V[0] === 0x20
+            && this.V[CARRY_REGISTER] === 0;
+        this.decodeAndExecuteOpcode(0x8017);
+        let test2 = this.pc === (0x200 + 4)
+            && this.V[0] === 0x30
+            && this.V[CARRY_REGISTER] === 1;
+        return test1 && test2;
+    }
+
+    test0x8XYE = () => {
+        this.V[0] = 128;
+        this.decodeAndExecuteOpcode(0x800e);
+        let test1 = this.pc === (0x200 + 2)
+            && this.V[0] === 1
+            && this.V[CARRY_REGISTER] === 1;
+        this.decodeAndExecuteOpcode(0x800e);
+        return test1 && this.pc === (0x200 + 4)
+            && this.V[0] === 0
+            && this.V[CARRY_REGISTER] === 0;
+    }
+
+    test9XY0 = () => {
+        this.decodeAndExecuteOpcode(0x9001);
+        let test1 = this.pc === (0x200 + 2);
+        this.initialize();
+        this.decodeAndExecuteOpcode(0x9010);
+        let test2 = this.pc === (0x200 + 2);
+        this.initialize();
+        this.decodeAndExecuteOpcode(0x9000);
+        return test1 && test2 && this.pc === (0x200 + 4);
+    }
+
+    test0xANNN = () => {
+        this.decodeAndExecuteOpcode(0xa050);
+        return this.pc === (0x200 + 2)
+            && this.I === 0x50;
+    }
+
+    test0xBNNN = () => {
+        this.V[0] = 0x10;
+        this.decodeAndExecuteOpcode(0xa050);
+        return this.pc === 0x60;
+    }
+
+    test0xCXNN = () => {
+        this.decodeAndExecuteOpcode(0xc011);
+        return this.pc === (0x200 + 2)
+            && this.V[0] >= 0
+            && this.V[0] < 256;
+    }
+
+    test0xDXYN = () => {
+        this.decodeAndExecuteOpcode(0xda01);
+        for (let i = 10; i < 18; i++) {
+            if (this.gfx[i] !== 1)
+                return false;
+        }
+    }
+
+    test0xEX9E = () => {
+    }
+
+    test0xEXA1 = () => {
+    }
+
+    test0x0e0 = () => {
+        this.decodeAndExecuteOpcode(0x0e0);
+        return this.pc === (0x200 + 2) &&
+            this.arrayEquals(this.gfx, Array(SCREEN_WIDTH * SCREEN_HEIGHT).fill(0));
+    }
+
+    test0x0e0 = () => {
+        this.decodeAndExecuteOpcode(0x0e0);
+        return this.pc === (0x200 + 2) &&
+            this.arrayEquals(this.gfx, Array(SCREEN_WIDTH * SCREEN_HEIGHT).fill(0));
+    }
+
+    test0x0e0 = () => {
+        this.decodeAndExecuteOpcode(0x0e0);
+        return this.pc === (0x200 + 2) &&
+            this.arrayEquals(this.gfx, Array(SCREEN_WIDTH * SCREEN_HEIGHT).fill(0));
+    }
+
+    test0x0e0 = () => {
+        this.decodeAndExecuteOpcode(0x0e0);
+        return this.pc === (0x200 + 2) &&
+            this.arrayEquals(this.gfx, Array(SCREEN_WIDTH * SCREEN_HEIGHT).fill(0));
+    }
+
+    test0x0e0 = () => {
+        this.decodeAndExecuteOpcode(0x0e0);
+        return this.pc === (0x200 + 2) &&
+            this.arrayEquals(this.gfx, Array(SCREEN_WIDTH * SCREEN_HEIGHT).fill(0));
+    }
+
+    test0x0e0 = () => {
+        this.decodeAndExecuteOpcode(0x0e0);
+        return this.pc === (0x200 + 2) &&
+            this.arrayEquals(this.gfx, Array(SCREEN_WIDTH * SCREEN_HEIGHT).fill(0));
+    }
+
+    test0x0e0 = () => {
+        this.decodeAndExecuteOpcode(0x0e0);
+        return this.pc === (0x200 + 2) &&
+            this.arrayEquals(this.gfx, Array(SCREEN_WIDTH * SCREEN_HEIGHT).fill(0));
+    }
+
+    test0x0e0 = () => {
+        this.decodeAndExecuteOpcode(0x0e0);
+        return this.pc === (0x200 + 2) &&
+            this.arrayEquals(this.gfx, Array(SCREEN_WIDTH * SCREEN_HEIGHT).fill(0));
+    }
+
+    test0xFX65= () => {
+        this.decodeAndExecuteOpcode(0x0e0);
+        return this.pc === (0x200 + 2) &&
+            this.arrayEquals(this.gfx, Array(SCREEN_WIDTH * SCREEN_HEIGHT).fill(0));
     }
 }
