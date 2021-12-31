@@ -17,3 +17,195 @@ test('Code 0x1NNN : Jump to address NNN', () => {
   cpu.initialize();
   expect(cpu.test0x1NNN()).toBe(true)
 });
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
+
+test('Code 0x1NNN : Jump to address NNN', () => {
+  let cpu = new CPU();
+  cpu.initialize();
+  expect(cpu.test0x1NNN()).toBe(true)
+});
